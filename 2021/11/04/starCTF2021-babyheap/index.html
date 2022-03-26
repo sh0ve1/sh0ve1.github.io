@@ -23,14 +23,16 @@
 <meta property="og:site_name" content="sh0ve1&#39;s blog">
 <meta property="og:description" content="0x0 前言2021年的*CTF中的一道题，赛后复现。 0x1 题目信息 采用libc-2.27.so（2.27-3ubuntu1.4_amd64） file pwn  1pwn: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter &#x2F;home&#x2F;sh0ve1&#x2F;glibc-al">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://sh0ve1.github.io/img/4.jpg">
 <meta property="article:published_time" content="2021-11-04T10:47:45.000Z">
-<meta property="article:modified_time" content="2021-11-17T09:52:42.785Z">
+<meta property="article:modified_time" content="2022-03-26T10:42:47.677Z">
 <meta property="article:author" content="sh0ve1">
 <meta property="article:tag" content="heap">
+<meta property="article:tag" content="UAF">
 <meta property="article:tag" content="tcache poisoning">
 <meta property="article:tag" content="chunk overlapping">
-<meta property="article:tag" content="UAF">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://sh0ve1.github.io/img/4.jpg">
   
   
   <title>starCTF2021-babyheap - sh0ve1&#39;s blog</title>
@@ -174,7 +176,7 @@
 </nav>
 
     <div class="banner" id="banner" parallax=true
-         style="background: url('/img/7.jpg') no-repeat center center;
+         style="background: url('/img/post_1.jpg') no-repeat center center;
            background-size: cover;">
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
@@ -244,27 +246,40 @@
               <h2 id="0x0-前言"><a href="#0x0-前言" class="headerlink" title="0x0 前言"></a>0x0 前言</h2><p>2021年的<code>*CTF</code>中的一道题，赛后复现。</p>
 <h2 id="0x1-题目信息"><a href="#0x1-题目信息" class="headerlink" title="0x1 题目信息"></a>0x1 题目信息</h2><ul>
 <li>采用<code>libc-2.27.so</code>（2.27-3ubuntu1.4_amd64）</li>
-<li><code>file pwn</code></li>
+<li>file pwn</li>
 </ul>
 <figure class="highlight apache"><table><tr><td class="gutter"><div class="code-wrapper"><pre><span class="line">1</span><br></pre></div></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">pwn</span>: ELF <span class="hljs-number">64</span>-bit LSB shared object, x86-<span class="hljs-number">64</span>, version <span class="hljs-number">1</span> (SYSV), dynamically linked, interpreter /home/sh0ve1/glibc-<span class="hljs-literal">all</span>-in-one/libs/<span class="hljs-number">2</span>.<span class="hljs-number">27</span>-<span class="hljs-number">3</span>ubuntu1.<span class="hljs-number">4</span>_amd64/ld-<span class="hljs-number">2</span>.<span class="hljs-number">27</span>.so, for GNU/Linux <span class="hljs-number">3</span>.<span class="hljs-number">2</span>.<span class="hljs-number">0</span>, BuildID[sha1]=fb33d5a171e2edbd2bc27958e08714ca9e3a58cc, not stripped<br></code></pre></td></tr></table></figure>
 <ul>
-<li><code>checksec pwn</code> 保护全开<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs avrasm"><span class="hljs-symbol">Arch:</span>     amd64<span class="hljs-number">-64</span>-little<br><span class="hljs-symbol">RELRO:</span>    Full RELRO<br><span class="hljs-symbol">Stack:</span>    Canary found<br><span class="hljs-symbol">NX:</span>       NX enabled<br><span class="hljs-symbol">PIE:</span>      PIE enabled<br><br></code></pre></td></tr></table></figure></li>
+<li>checksec pwn：保护全开</li>
 </ul>
+<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs avrasm"><span class="hljs-symbol">Arch:</span>     amd64<span class="hljs-number">-64</span>-little<br><span class="hljs-symbol">RELRO:</span>    Full RELRO<br><span class="hljs-symbol">Stack:</span>    Canary found<br><span class="hljs-symbol">NX:</span>       NX enabled<br><span class="hljs-symbol">PIE:</span>      PIE enabled<br><br></code></pre></td></tr></table></figure>
+
 <h2 id="0x2-功能分析"><a href="#0x2-功能分析" class="headerlink" title="0x2 功能分析"></a>0x2 功能分析</h2><p>该题功能齐全</p>
 <ul>
-<li>add： 有着16个可用的下标，且分配时会直接覆写原指针，因此我们几乎是可以分配任意个chunk，但是只允许我们分配fastbin size范围的chunk。 <figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs awk">_DWORD *add()<br>&#123;<br>  _DWORD *result; <span class="hljs-regexp">//</span> rax<br>  int idx; <span class="hljs-regexp">//</span> [rsp+<span class="hljs-number">8</span>h] [rbp-<span class="hljs-number">8</span>h]<br>  int size; <span class="hljs-regexp">//</span> [rsp+Ch] [rbp-<span class="hljs-number">4</span>h]<br><br>  puts(<span class="hljs-string">&quot;input index&quot;</span>);<br>  idx = readInt();<br>  <span class="hljs-keyword">if</span> ( idx &lt; <span class="hljs-number">0</span> || idx &gt; <span class="hljs-number">15</span> )<br>  &#123;<br>    puts(<span class="hljs-string">&quot;bye!&quot;</span>);<br>    <span class="hljs-keyword">exit</span>(<span class="hljs-number">0</span>);<br>  &#125;<br>  puts(<span class="hljs-string">&quot;input size&quot;</span>);<br>  size = readInt();<br>  <span class="hljs-keyword">if</span> ( size &lt;= <span class="hljs-number">15</span> || size &gt; <span class="hljs-number">96</span> )<br>  &#123;<br>    puts(<span class="hljs-string">&quot;bye!&quot;</span>);<br>    <span class="hljs-keyword">exit</span>(<span class="hljs-number">0</span>);<br>  &#125;<br>  pools[idx] = malloc(size);<br>  result = sizes;<br>  sizes[idx] = size;<br>  return result;<br></code></pre></td></tr></table></figure></li>
-<li>edit：该函数根据index定位chunk_addr，然后从<code>chunk_addr+8</code>偏移开始写入内容。因此，我们无法直接进行<code>tcache poisoning</code>，可以考虑<code>chunk overlapping</code>修改fd<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs arduino"><span class="hljs-function"><span class="hljs-type">ssize_t</span> <span class="hljs-title">edit</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>&#123;<br>  <span class="hljs-type">int</span> v1; <span class="hljs-comment">// [rsp+Ch] [rbp-4h]</span><br><br>  <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;input index&quot;</span>);<br>  v1 = <span class="hljs-built_in">readInt</span>();<br>  <span class="hljs-keyword">if</span> ( v1 &lt; <span class="hljs-number">0</span> || v1 &gt; <span class="hljs-number">15</span> || !pools[v1] )<br>  &#123;<br>    <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;bye!&quot;</span>);<br>    <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>  &#125;<br>  <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;input content&quot;</span>);<br>  <span class="hljs-keyword">return</span> <span class="hljs-built_in">read</span>(<span class="hljs-number">0</span>, (<span class="hljs-type">void</span> *)(pools[v1] + <span class="hljs-number">8LL</span>), (<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span>)(sizes[v1] - <span class="hljs-number">8</span>));<br>&#125;<br></code></pre></td></tr></table></figure></li>
+<li>add： 有着16个可用的下标，且分配时会直接覆写原指针，因此我们几乎是可以分配任意个chunk，但是只允许我们分配fastbin size范围的chunk。</li>
+</ul>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs awk">_DWORD *add()<br>&#123;<br>  _DWORD *result; <span class="hljs-regexp">//</span> rax<br>  int idx; <span class="hljs-regexp">//</span> [rsp+<span class="hljs-number">8</span>h] [rbp-<span class="hljs-number">8</span>h]<br>  int size; <span class="hljs-regexp">//</span> [rsp+Ch] [rbp-<span class="hljs-number">4</span>h]<br><br>  puts(<span class="hljs-string">&quot;input index&quot;</span>);<br>  idx = readInt();<br>  <span class="hljs-keyword">if</span> ( idx &lt; <span class="hljs-number">0</span> || idx &gt; <span class="hljs-number">15</span> )<br>  &#123;<br>    puts(<span class="hljs-string">&quot;bye!&quot;</span>);<br>    <span class="hljs-keyword">exit</span>(<span class="hljs-number">0</span>);<br>  &#125;<br>  puts(<span class="hljs-string">&quot;input size&quot;</span>);<br>  size = readInt();<br>  <span class="hljs-keyword">if</span> ( size &lt;= <span class="hljs-number">15</span> || size &gt; <span class="hljs-number">96</span> )<br>  &#123;<br>    puts(<span class="hljs-string">&quot;bye!&quot;</span>);<br>    <span class="hljs-keyword">exit</span>(<span class="hljs-number">0</span>);<br>  &#125;<br>  pools[idx] = malloc(size);<br>  result = sizes;<br>  sizes[idx] = size;<br>  return result;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>edit：该函数根据index定位chunk_addr，然后从<code>chunk_addr+8</code>偏移开始写入内容。因此，我们无法直接进行<code>tcache poisoning</code>，可以考虑<code>chunk overlapping</code>修改fd</li>
+</ul>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs arduino"><span class="hljs-function"><span class="hljs-type">ssize_t</span> <span class="hljs-title">edit</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>&#123;<br>  <span class="hljs-type">int</span> v1; <span class="hljs-comment">// [rsp+Ch] [rbp-4h]</span><br><br>  <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;input index&quot;</span>);<br>  v1 = <span class="hljs-built_in">readInt</span>();<br>  <span class="hljs-keyword">if</span> ( v1 &lt; <span class="hljs-number">0</span> || v1 &gt; <span class="hljs-number">15</span> || !pools[v1] )<br>  &#123;<br>    <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;bye!&quot;</span>);<br>    <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>  &#125;<br>  <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;input content&quot;</span>);<br>  <span class="hljs-keyword">return</span> <span class="hljs-built_in">read</span>(<span class="hljs-number">0</span>, (<span class="hljs-type">void</span> *)(pools[v1] + <span class="hljs-number">8LL</span>), (<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span>)(sizes[v1] - <span class="hljs-number">8</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
 <li>show：常规的打印堆块内容</li>
 </ul>
 <figure class="highlight plaintext"><figcaption><span>show()</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs int">&#123;<br>  int v1; // [rsp+Ch] [rbp-4h]<br><br>  puts(&quot;input index&quot;);<br>  v1 = readInt();<br>  if ( v1 &lt; 0 || v1 &gt; 15 || !pools[v1] )<br>  &#123;<br>    puts(&quot;bye!&quot;);<br>    exit(0);<br>  &#125;<br>  return puts((const char *)pools[v1]);<br>&#125;<br></code></pre></td></tr></table></figure>
+
 <ul>
 <li>delete：根据index释放指定chunk，但是释放后没有将指针置为0，因此存在UAF漏洞</li>
 </ul>
 <figure class="highlight plaintext"><figcaption><span>delete()</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs void">&#123;<br>  int v0; // [rsp+Ch] [rbp-4h]<br><br>  puts(&quot;input index&quot;);<br>  v0 = readInt();<br>  if ( v0 &lt; 0 || v0 &gt; 15 || !pools[v0] )<br>  &#123;<br>    puts(&quot;bye!&quot;);<br>    exit(0);<br>  &#125;<br>  free((void *)pools[v0]);                      // UAF<br>&#125;<br></code></pre></td></tr></table></figure>
+
 <ul>
 <li>leaveYouName：创建0x400字节（large bin）的堆块来存储name,然后输入0x100字节大小的name。</li>
 </ul>
 <figure class="highlight plaintext"><figcaption><span>*leaveYouName()</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs char">&#123;<br>  char *result; // rax<br><br>  result = name;<br>  if ( !name )<br>  &#123;<br>    name = (char *)malloc(0x400uLL);            // 申请large bin 执行 malloc_consolidate 合并<br>    puts(&quot;your name:&quot;);<br>    result = (char *)read(0, name, 0x100uLL);<br>  &#125;<br>  return result;<br>&#125;<br></code></pre></td></tr></table></figure>
+
 <ul>
 <li>showYourName：使用<code>puts</code>函数打印出name</li>
 </ul>
@@ -299,11 +314,11 @@
                     
                       <a class="hover-with-bg" href="/tags/heap/">heap</a>
                     
+                      <a class="hover-with-bg" href="/tags/UAF/">UAF</a>
+                    
                       <a class="hover-with-bg" href="/tags/tcache-poisoning/">tcache poisoning</a>
                     
                       <a class="hover-with-bg" href="/tags/chunk-overlapping/">chunk overlapping</a>
-                    
-                      <a class="hover-with-bg" href="/tags/UAF/">UAF</a>
                     
                   </div>
                 
@@ -320,7 +335,7 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2021/11/05/changancup2021-K1ng-in-h3Ap-I/">
+                      <a href="/2021/11/05/%E9%95%BF%E5%9F%8E%E6%9D%AF2021-K1ng-in-h3Ap-I/">
                         <i class="iconfont icon-arrowleft"></i>
                         <span class="hidden-mobile">2021长城杯-K1ng_in_h3Ap_I</span>
                         <span class="visible-mobile">上一篇</span>

