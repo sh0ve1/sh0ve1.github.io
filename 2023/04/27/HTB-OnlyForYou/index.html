@@ -16,14 +16,16 @@
   <meta name="author" content="sh0ve1">
   <meta name="keywords" content="">
   
-    <meta property="og:type" content="article">
+    <meta name="description" content="OnlyForYouIntroduceOS : LinuxRate : Medium 该靶机涉及知识点有：LFI，subprocess.run(shell&#x3D;True)的漏洞，端口转发，cypher注入，pip download导致命令执行漏洞。 Reconnmap sudo nmap –min-rate 10000 -p- -oN nmap&#x2F;ports 10.10.11.210">
+<meta property="og:type" content="article">
 <meta property="og:title" content="HTB-OnlyForYou">
 <meta property="og:url" content="https://sh0ve1.github.io/2023/04/27/HTB-OnlyForYou/index.html">
 <meta property="og:site_name" content="sh0ve1&#39;s blog">
+<meta property="og:description" content="OnlyForYouIntroduceOS : LinuxRate : Medium 该靶机涉及知识点有：LFI，subprocess.run(shell&#x3D;True)的漏洞，端口转发，cypher注入，pip download导致命令执行漏洞。 Reconnmap sudo nmap –min-rate 10000 -p- -oN nmap&#x2F;ports 10.10.11.210">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://sh0ve1.github.io/img/16.jpg">
 <meta property="article:published_time" content="2023-04-26T16:00:00.000Z">
-<meta property="article:modified_time" content="2023-05-09T04:10:58.470Z">
+<meta property="article:modified_time" content="2023-05-09T05:07:57.031Z">
 <meta property="article:author" content="sh0ve1">
 <meta property="article:tag" content="hackthebox">
 <meta property="article:tag" content="LFI">
@@ -201,7 +203,7 @@
   
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      10k 字
+      11k 字
     </span>
   
 
@@ -210,7 +212,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      87 分钟
+      91 分钟
     </span>
   
 
@@ -255,16 +257,17 @@
 <ul>
 <li>sudo nmap –script&#x3D;vuln -p22,80 -oN nmap&#x2F;vuln 10.10.11.210</li>
 </ul>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs"><br></code></pre></td></tr></table></figure>
+<figure class="highlight vhdl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs vhdl"><span class="hljs-keyword">map</span> scan <span class="hljs-keyword">report</span> <span class="hljs-keyword">for</span> <span class="hljs-number">10.10</span>.<span class="hljs-number">11.210</span><br>Host <span class="hljs-keyword">is</span> up (<span class="hljs-number">0.27</span>s latency).<br><br><span class="hljs-keyword">PORT</span>   STATE SERVICE<br><span class="hljs-number">22</span>/tcp <span class="hljs-keyword">open</span>  ssh<br><span class="hljs-number">80</span>/tcp <span class="hljs-keyword">open</span>  http<br>|_http-passwd: <span class="hljs-literal">ERROR</span>: Script execution failed (<span class="hljs-keyword">use</span> -d <span class="hljs-keyword">to</span> debug)<br>|_http-vuln-cve2013-<span class="hljs-number">7091</span>: <span class="hljs-literal">ERROR</span>: Script execution failed (<span class="hljs-keyword">use</span> -d <span class="hljs-keyword">to</span> debug)<br>|_http-stored-xss: Couldn<span class="hljs-symbol">&#x27;t</span> find any stored XSS vulnerabilities.<br>|_http-dombased-xss: Couldn<span class="hljs-symbol">&#x27;t</span> find any DOM based XSS.<br>|_http-csrf: Couldn<span class="hljs-symbol">&#x27;t</span> find any CSRF vulnerabilities.<br><br># Nmap done at Mon Apr <span class="hljs-number">24</span> <span class="hljs-number">10</span>:<span class="hljs-number">34</span>:<span class="hljs-number">17</span> <span class="hljs-number">2023</span> <span class="hljs-comment">-- 1 IP address (1 host up) scanned in 602.32 seconds</span><br></code></pre></td></tr></table></figure>
 <h3 id="vhost"><a href="#vhost" class="headerlink" title="vhost"></a>vhost</h3><ul>
 <li><code>gobuster vhost -u only4you.htb -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-20000.txt -t 30 --append-domain --follow-redirect</code></li>
 </ul>
 <p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-OnlyForYou/1.png" srcset="/img/loading.gif" lazyload></p>
 <h3 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h3><ul>
-<li><p>在<code>/etc/hosts</code>中添加 <code>10.10.11.210  only4you.htb</code></p>
-</li>
-<li><p>访问 <code>only4you.htb</code></p>
-</li>
+<li>在<code>/etc/hosts</code>中添加 <code>10.10.11.210  only4you.htb</code> 和 <code>10.10.11.210  beta.only4you.htb</code></li>
+<li>访问 <code>only4you.htb</code></li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-OnlyForYou/25.png" srcset="/img/loading.gif" lazyload></p>
+<ul>
 <li><p>访问  <code>beta.only4you.htb</code><br><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-OnlyForYou/2.png" srcset="/img/loading.gif" lazyload></p>
 </li>
 <li><p>访问<code>http://beta.only4you.htb/source</code> 得到名为Beta的源码，疑似该网站源码。<br><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-OnlyForYou/3.png" srcset="/img/loading.gif" lazyload></p>
