@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://sh0ve1.github.io/img/14.jpg">
 <meta property="article:published_time" content="2023-04-22T06:53:00.000Z">
-<meta property="article:modified_time" content="2023-05-09T03:05:26.126Z">
+<meta property="article:modified_time" content="2023-05-09T03:43:49.877Z">
 <meta property="article:author" content="sh0ve1">
 <meta property="article:tag" content="hackthebox">
 <meta property="article:tag" content="ansible">
@@ -260,32 +260,32 @@
 <h3 id="http"><a href="#http" class="headerlink" title="http"></a>http</h3><ul>
 <li>访问8080端口，存在一个网站</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/1.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/1.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>blog 里面发现两个用户名 <code>admin</code> 和  <code>Brandon Auger</code> 。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/2.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/2.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>访问upload，通过测试发现，文件上传功能只是检查了上传文件后缀，且采用了白名单，只允许 gif，jpeg和png文件。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/3.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/3.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>上传文件后，发现点击 View your Image 即可访问上传图片。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/4.png" srcset="/img/loading.gif" lazyload alt="image"></p>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/5.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/4.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/5.png" srcset="/img/loading.gif" lazyload></p>
 <h2 id="User-Privilege"><a href="#User-Privilege" class="headerlink" title="User Privilege"></a>User Privilege</h2><ul>
 <li>抓包，尝试控制 img 参数，发现存在任意文件读取和目录遍历漏洞。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/6.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/6.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>发现home目录下存在两个用户目录 phil 和 frank。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/7.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/7.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>发现不能读取 phil 目录下的 user.txt 文件 ，应该是权限问题</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/8.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/8.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>查看webapp关键源码 UserController.java</li>
 </ul>
@@ -297,7 +297,7 @@
 <ul>
 <li>查看frank 用户目录下的文件，发现敏感信息： <code>phil:DocPhillovestoInject123</code></li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/9.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/9.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>尝试使用该密码通过ssh登录phil,frank,root都失败了(事后发现，没有开启ssh)</li>
 <li>查看 <code>pom.xml</code> webapp配置文件</li>
@@ -307,8 +307,8 @@
 <ul>
 <li>搜索组件<code>spring-cloud-function-web:3.2.2</code>相关的漏洞，发现可以 RCE 的 CVE-2022-22963。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/10.png" srcset="/img/loading.gif" lazyload alt="image"></p>
-<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/11.png" srcset="/img/loading.gif" lazyload alt="image"></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/10.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://raw.githubusercontent.com/sh0ve1/Images/master/HTB-inject/11.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li><p>优化一下shell</p>
 <figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs routeros">python3 -c <span class="hljs-string">&#x27;import pty;pty.spawn (&quot;/bin/bash&quot;)&#x27;</span><br><span class="hljs-built_in">export</span> <span class="hljs-attribute">TERM</span>=screen<br></code></pre></td></tr></table></figure>
